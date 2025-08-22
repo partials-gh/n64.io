@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" type="image/x-icon" href="icons/favicon.png">
-    <meta name="keywords" content="N64 Emulator, N64 JavaScript Emulator, WebAssembly, HTML5, Nintendo 64
+    <meta name="keywords" content="N64 Emulator, N64 JavaScript Emulator, WebAssembly, HTML5, Nintendo 64"
     <meta charset="UTF-8">
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/rivets/0.9.6/rivets.bundled.min.js"></script>
@@ -71,44 +71,7 @@
     <canvas id="canvas" style="width: 640px;display: none;"></canvas>
 
 	<script src="gl2gpu.js"></script>
-<script>
-  if (window.GL2GPU) {
-    GL2GPU.enable({
-      interceptGetContext: true, // hook into WebGL calls
-      supportWebGL2: true,       // handle WebGL2 if used
-      verbose: true,             // log to console for debugging
-      fallbackToWebGL: false      // run normally if WebGPU not available
-    });
-  } else {
-    console.warn('GL2GPU not found — running with normal WebGL.');
-  }
-
-  // 2) Tell Emscripten which canvas to use
-  window.Module = window.Module || {};
-  Module.canvas = document.getElementById('canvas');
-</script>
-	<script>
-  // Mirror console.log to alerts
-  (function() {
-    const oldLog = console.log;
-    console.log = function(...args) {
-      alert(args.join(' ')); // show popup
-      oldLog.apply(console, args); // still log to console
-    };
-
-    const oldWarn = console.warn;
-    console.warn = function(...args) {
-      alert('⚠️ ' + args.join(' '));
-      oldWarn.apply(console, args);
-    };
-
-    const oldError = console.error;
-    console.error = function(...args) {
-      alert('❌ ' + args.join(' '));
-      oldError.apply(console, args);
-    };
-  })();
-</script>
+	
     
     <div id="maindiv" class="container text-center">
         <div id="topPanel" style="display: none;">
@@ -1012,6 +975,7 @@
 </body>
 
 </html>
+
 
 
 
