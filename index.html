@@ -77,7 +77,7 @@
       interceptGetContext: true, // hook into WebGL calls
       supportWebGL2: true,       // handle WebGL2 if used
       verbose: true,             // log to console for debugging
-      fallbackToWebGL: true      // run normally if WebGPU not available
+      fallbackToWebGL: false      // run normally if WebGPU not available
     });
   } else {
     console.warn('GL2GPU not found — running with normal WebGL.');
@@ -990,6 +990,7 @@
 </body>
 
 </html>
+
 
 
 
