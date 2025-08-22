@@ -87,6 +87,28 @@
   window.Module = window.Module || {};
   Module.canvas = document.getElementById('canvas');
 </script>
+	<script>
+  // Mirror console.log to alerts
+  (function() {
+    const oldLog = console.log;
+    console.log = function(...args) {
+      alert(args.join(' ')); // show popup
+      oldLog.apply(console, args); // still log to console
+    };
+
+    const oldWarn = console.warn;
+    console.warn = function(...args) {
+      alert('⚠️ ' + args.join(' '));
+      oldWarn.apply(console, args);
+    };
+
+    const oldError = console.error;
+    console.error = function(...args) {
+      alert('❌ ' + args.join(' '));
+      oldError.apply(console, args);
+    };
+  })();
+</script>
     
     <div id="maindiv" class="container text-center">
         <div id="topPanel" style="display: none;">
@@ -990,6 +1012,7 @@
 </body>
 
 </html>
+
 
 
 
