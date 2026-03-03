@@ -428,51 +428,63 @@
     });
 
     // ── DRAG & DROP ────────────────────────────────
-    const dropArea   = document.getElementById('dropArea');
-    const fileInput  = document.getElementById('file-upload');
-    const statusBox  = document.getElementById('statusBox');
+    const dropArea  = document.getElementById('dropArea');
+    const fileInput = document.getElementById('file-upload');
+    const statusBox = document.getElementById('statusBox');
 
-    document.getElementById('btnBrowse').addEventListener('click', () => fileInput.click());
-    dropArea.addEventListener('click', e => { if (!e.target.closest('button')) fileInput.click(); });
+    // Browse button — delegate entirely to script.js
+    document.getElementById('btnBrowse').addEventListener('click', () => {
+        if (typeof myApp !== 'undefined') myApp.uploadBrowse();
+        else fileInput.click();
+    });
 
+    // Clicking anywhere on drop zone triggers browse
+    dropArea.addEventListener('click', e => {
+        if (!e.target.closest('button')) {
+            if (typeof myApp !== 'undefined') myApp.uploadBrowse();
+            else fileInput.click();
+        }
+    });
+
+    // Drag visual feedback
     ['dragenter','dragover'].forEach(evt =>
         dropArea.addEventListener(evt, e => { e.preventDefault(); dropArea.classList.add('drag-over'); })
     );
     ['dragleave','dragend'].forEach(evt =>
         dropArea.addEventListener(evt, () => dropArea.classList.remove('drag-over'))
     );
+
+    // Drop — inject file into input then let script.js handle it naturally
     dropArea.addEventListener('drop', e => {
         e.preventDefault();
         dropArea.classList.remove('drag-over');
         const file = e.dataTransfer.files[0];
-        if (file) handleRom(file);
-    });
-    fileInput.addEventListener('change', () => {
-        if (fileInput.files[0]) handleRom(fileInput.files[0]);
-    });
+        if (!file) return;
 
-    function handleRom(file) {
         const ext = file.name.split('.').pop().toLowerCase();
         const valid = ['n64','z64','v64','rom','zip','7z'];
-        statusBox.className = '';
         if (!valid.includes(ext)) {
             statusBox.className = 'err';
             statusBox.textContent = 'INVALID FILE: .' + ext.toUpperCase();
             statusBox.style.display = 'block';
             return;
         }
+
         statusBox.className = 'ok';
         statusBox.textContent = file.name.toUpperCase() + ' — LOADING...';
         statusBox.style.display = 'block';
+
+        // Set file on input WITHOUT dispatching change (script.js watches it natively)
         try {
             const dt = new DataTransfer();
             dt.items.add(file);
             fileInput.files = dt.files;
-            fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+            // Trigger script.js upload handler directly — avoids re-entering our code
+            if (typeof myApp !== 'undefined') myApp.uploadRom();
         } catch(err) {
-            if (typeof myApp !== 'undefined' && myApp.handleFile) myApp.handleFile(file);
+            console.error('Drop failed:', err);
         }
-    }
+    });
 
     // ── BOOT SEQUENCE ──────────────────────────────
     const lines = ['b1','b2','b3','b4','b5','b6','b7'];
