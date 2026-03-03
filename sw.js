@@ -1,4 +1,4 @@
-const KEY = 'N64EMU';
+const KEY = 'N64EMU-v2';
 
 self.addEventListener('install', (event) => {
     event.waitUntil(self.skipWaiting());
