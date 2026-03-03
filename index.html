@@ -1,983 +1,927 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-    <title>N64 Emulator</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="manifest" href="manifest.json" />
-    <link rel="icon" type="image/x-icon" href="icons/favicon.png">
-    <meta name="keywords" content="N64 Emulator, N64 JavaScript Emulator, WebAssembly, HTML5, Nintendo 64"
-    <meta charset="UTF-8">
-    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/rivets/0.9.6/rivets.bundled.min.js"></script>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.2/dist/FileSaver.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.0/nipplejs.min.js"></script>
-	
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Ember</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0908;--surface:#111009;--surface2:#18160e;--surface3:#201e14;
+  --border:#2a2618;--border2:#3a3620;--text:#e8e0cc;--text-muted:#7a7260;
+  --text-dim:#3d3928;--accent:#d4952a;--accent2:#f0b84a;--accent-dim:#2a1e08;
+  --danger:#c0614a;--mono:'DM Mono',monospace;--serif:'Instrument Serif',serif;
+  --sidebar-w:262px;--preview-w:420px
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px;line-height:1.6;overflow:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");pointer-events:none;z-index:9998;opacity:0.5}
+.page{position:fixed;inset:0;display:none;flex-direction:column}
+.page.active{display:flex}
 
-    <style>
-        /* #maindiv {
-            width: 100%;
-            max-width: 100%;
-            padding-left: 0px;
-        } */
+/* AUTH */
+#auth-page{align-items:center;justify-content:center;background:var(--bg)}
+.auth-glow{position:absolute;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(212,149,42,0.055) 0%,transparent 65%);pointer-events:none;top:50%;left:50%;transform:translate(-50%,-50%)}
+.auth-card{width:376px;max-width:calc(100vw - 32px);background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:36px 32px;box-shadow:0 40px 100px rgba(0,0,0,0.85),0 0 0 1px rgba(255,255,255,0.02) inset;position:relative;z-index:1;animation:cardIn 0.45s cubic-bezier(0.2,0,0,1);max-height:calc(100vh - 32px);overflow-y:auto}
+@keyframes cardIn{from{opacity:0;transform:translateY(18px) scale(0.96)}to{opacity:1;transform:none}}
+.auth-brand{display:flex;align-items:center;gap:10px;margin-bottom:30px}
+.auth-icon{width:36px;height:36px;border-radius:10px;background:var(--accent-dim);border:1px solid rgba(212,149,42,0.25);display:grid;place-items:center;font-size:15px;color:var(--accent)}
+.auth-name{font-family:var(--serif);font-size:20px;color:var(--accent2);letter-spacing:-0.2px}
+.auth-title{font-family:var(--serif);font-size:25px;letter-spacing:-0.5px;margin-bottom:4px}
+.auth-sub{font-size:11px;color:var(--text-muted);margin-bottom:26px}
+.fld{margin-bottom:14px}
+.lbl{display:block;font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.9px;margin-bottom:6px}
+.inp{width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;transition:border-color .15s,box-shadow .15s;-webkit-user-select:text;user-select:text}
+.inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(212,149,42,0.1)}
+.inp::placeholder{color:var(--text-dim)}
+.pw-rules{font-size:10px;color:var(--text-dim);margin-top:6px;display:flex;flex-wrap:wrap;gap:5px}
+.pw-rule{padding:2px 7px;border-radius:4px;border:1px solid var(--border);background:var(--bg);transition:all .2s}
+.pw-rule.met{color:var(--accent);border-color:rgba(212,149,42,0.3);background:var(--accent-dim)}
+.auth-btn{width:100%;padding:11px;border-radius:9px;border:none;background:var(--accent);color:#0a0908;font-family:var(--mono);font-size:13px;cursor:pointer;transition:all .15s;margin-top:4px}
+.auth-btn:hover{background:var(--accent2);box-shadow:0 6px 24px rgba(212,149,42,0.22);transform:translateY(-1px)}
+.auth-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.auth-switch{text-align:center;margin-top:18px;font-size:12px;color:var(--text-muted)}
+.auth-switch a{color:var(--accent);cursor:pointer;text-decoration:none}
+.auth-switch a:hover{color:var(--accent2)}
+.auth-err{background:rgba(192,97,74,.08);border:1px solid rgba(192,97,74,.25);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--danger);margin-bottom:16px;display:none;line-height:1.5}
+.auth-err.show{display:block}
 
+/* APP */
+#app-page{display:none;flex-direction:row;height:100%;overflow:hidden}
+#app-page.active{display:flex}
 
-        html,body{padding:0;margin:0}
-        canvas{width:100%;height:100%;position:fixed;left:0;right:0;bottom:0;top:0;z-index:-1}
+/* SIDEBAR */
+.sidebar{width:var(--sidebar-w);flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100%;z-index:200;transition:transform .28s cubic-bezier(0.2,0,0,1)}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:199;backdrop-filter:blur(4px)}
+.sb-top{padding:15px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px}
+.sb-brand{font-family:var(--serif);font-size:16px;letter-spacing:-.3px;color:var(--accent2);flex:1}
+.icon-btn{width:28px;height:28px;border-radius:7px;border:1px solid var(--border);background:none;color:var(--text-muted);cursor:pointer;display:grid;place-items:center;transition:all .15s;flex-shrink:0}
+.icon-btn:hover,.icon-btn.on{color:var(--accent);border-color:rgba(212,149,42,.3);background:var(--accent-dim)}
+.icon-btn svg,.icon-btn i{width:12px;height:12px;font-size:12px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.new-btn{margin:9px 9px 3px;padding:8px 12px;border-radius:8px;border:1px dashed var(--border2);background:none;font-family:var(--mono);font-size:11px;color:var(--text-muted);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:7px;width:calc(100% - 18px)}
+.new-btn:hover{color:var(--accent);border-color:rgba(212,149,42,.3);background:var(--accent-dim)}
+.new-btn svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.sb-sec{padding:10px 8px 3px;font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px}
+.convo-list{flex:1;overflow-y:auto;padding:3px 7px}
+.convo-list::-webkit-scrollbar{width:2px}
+.convo-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.convo-item{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:7px;cursor:pointer;transition:all .12s;margin-bottom:1px}
+.convo-item:hover{background:var(--surface2)}
+.convo-item.active{background:var(--surface3);border:1px solid var(--border2)}
+.convo-title{flex:1;font-size:12px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.convo-item.active .convo-title{color:var(--text)}
+.convo-del{width:18px;height:18px;border-radius:4px;border:none;background:none;color:var(--text-dim);cursor:pointer;display:grid;place-items:center;opacity:0;transition:all .12s;flex-shrink:0;font-size:11px}
+.convo-item:hover .convo-del{opacity:1}
+.convo-del:hover{color:var(--danger);background:rgba(192,97,74,.1)}
+.convo-empty{padding:22px 14px;text-align:center;color:var(--text-dim);font-size:11px;line-height:1.9}
+.sb-footer{border-top:1px solid var(--border);padding:9px}
+.user-row{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;cursor:pointer;transition:all .12s;position:relative}
+.user-row:hover{background:var(--surface2)}
+.user-av{width:28px;height:28px;border-radius:7px;background:var(--accent-dim);border:1px solid rgba(212,149,42,.2);display:grid;place-items:center;font-size:11px;color:var(--accent);font-family:var(--serif);flex-shrink:0;text-transform:uppercase}
+.user-nm{flex:1;font-size:12px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user-menu{position:absolute;bottom:calc(100% + 5px);left:0;right:0;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:5px;box-shadow:0 -16px 48px rgba(0,0,0,.6);z-index:500;display:none}
+.user-menu.open{display:block}
+.um-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:12px;color:var(--text-muted);cursor:pointer;transition:all .1s;border:none;background:none;width:100%;font-family:var(--mono);text-align:left}
+.um-item:hover{color:var(--text);background:var(--surface3)}
+.um-item.danger:hover{color:var(--danger);background:rgba(192,97,74,.08)}
+.um-item i{width:14px;font-size:11px}
 
-        input[type="file"] {
-            display: none;
-        }
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg)}
+.topbar{padding:11px 17px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center;gap:11px;flex-shrink:0}
+.topbar-menu{display:none;width:32px;height:32px;border-radius:7px;border:1px solid var(--border);background:none;color:var(--text-muted);cursor:pointer;place-items:center;transition:all .15s}
+.topbar-menu svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+.topbar-title{flex:1;font-family:var(--serif);font-size:15px;letter-spacing:-.2px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tb-btn{width:32px;height:32px;border-radius:7px;border:1px solid var(--border);background:none;color:var(--text-muted);cursor:pointer;display:grid;place-items:center;transition:all .15s;flex-shrink:0}
+.tb-btn:hover,.tb-btn.on{color:var(--accent);border-color:rgba(212,149,42,.3);background:var(--accent-dim)}
+.tb-btn svg,.tb-btn i{width:13px;height:13px;font-size:13px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 
-        .table td,
-        .table th {
-            padding: 5px;
-        }
+/* MESSAGES */
+.messages{flex:1;overflow-y:auto;padding:26px 22px;display:flex;flex-direction:column;gap:0}
+.messages::-webkit-scrollbar{width:3px}
+.messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.welcome{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:40px;text-align:center}
+.welcome-icon{width:66px;height:66px;border-radius:20px;background:var(--accent-dim);border:1px solid rgba(212,149,42,.18);display:grid;place-items:center;font-size:26px;color:var(--accent);margin-bottom:6px;box-shadow:0 0 80px rgba(212,149,42,.07)}
+.welcome h2{font-family:var(--serif);font-size:30px;letter-spacing:-.5px;color:var(--text)}
+.welcome p{font-size:12px;color:var(--text-muted);max-width:310px;line-height:1.85;margin-top:2px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:16px;max-width:500px}
+.chip{display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;border:1px solid var(--border2);background:var(--surface);font-size:11px;color:var(--text-muted);cursor:pointer;transition:all .15s}
+.chip:hover{color:var(--accent);border-color:rgba(212,149,42,.3);background:var(--accent-dim)}
+.chip i{font-size:10px}
+.msg-group{margin-bottom:18px;animation:msgIn .2s ease}
+@keyframes msgIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.msg-group.user{display:flex;justify-content:flex-end}
+.msg-group.assistant{display:flex;gap:10px;align-items:flex-start}
+.ai-av{width:28px;height:28px;border-radius:8px;background:var(--accent-dim);border:1px solid rgba(212,149,42,.2);display:grid;place-items:center;font-size:12px;color:var(--accent);flex-shrink:0;margin-top:2px}
+.msg-bubble{padding:10px 15px;border-radius:12px;font-size:13px;line-height:1.65;word-break:break-word;-webkit-user-select:text;user-select:text;max-width:74%}
+.msg-group.user .msg-bubble{background:var(--surface2);border:1px solid var(--border2);border-bottom-right-radius:3px;color:var(--text)}
+.msg-group.assistant .msg-bubble{background:transparent;border:none;padding-left:0;max-width:100%;flex:1}
+/* md */
+.msg-bubble h1,.msg-bubble h2,.msg-bubble h3{font-family:var(--serif);font-weight:400;letter-spacing:-.3px;margin:16px 0 8px;color:var(--text)}
+.msg-bubble h1{font-size:21px}.msg-bubble h2{font-size:18px}.msg-bubble h3{font-size:15px}
+.msg-bubble p{margin-bottom:10px}.msg-bubble p:last-child{margin-bottom:0}
+.msg-bubble ul,.msg-bubble ol{margin:8px 0 10px 18px}.msg-bubble li{margin-bottom:3px}
+.msg-bubble strong{font-weight:700;color:var(--accent2)}
+.msg-bubble em{font-style:italic}
+.msg-bubble a{color:var(--accent);text-decoration:underline}
+.msg-bubble blockquote{border-left:2px solid var(--accent);padding-left:12px;color:var(--text-muted);margin:8px 0;font-style:italic}
+.msg-bubble hr{border:none;border-top:1px solid var(--border2);margin:14px 0}
+/* code */
+.code-block{margin:10px 0;border-radius:10px;overflow:hidden;border:1px solid var(--border2);background:var(--surface)}
+.code-head{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:var(--surface2);border-bottom:1px solid var(--border)}
+.code-lang{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px}
+.code-actions{display:flex;gap:4px}
+.code-btn{padding:3px 9px;border-radius:5px;border:1px solid var(--border2);background:none;font-family:var(--mono);font-size:10px;color:var(--text-muted);cursor:pointer;transition:all .12s}
+.code-btn:hover{color:var(--accent);border-color:rgba(212,149,42,.3);background:var(--accent-dim)}
+.code-block pre{margin:0;padding:14px;overflow-x:auto}
+.code-block pre code{background:none!important;padding:0!important;border-radius:0!important;font-size:12px!important;line-height:1.6!important}
+.icode{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:12px;color:var(--accent2)}
+/* typing */
+.typing-dots{display:flex;align-items:center;gap:4px;padding:12px 0}
+.typing-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:td 1.2s ease-in-out infinite}
+.typing-dot:nth-child(2){animation-delay:.2s}.typing-dot:nth-child(3){animation-delay:.4s}
+@keyframes td{0%,60%,100%{transform:translateY(0);opacity:.3}30%{transform:translateY(-5px);opacity:1}}
+/* input */
+.input-area{padding:13px 17px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0}
+.input-wrap{display:flex;gap:8px;align-items:flex-end;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:8px 8px 8px 14px;transition:border-color .15s,box-shadow .15s}
+.input-wrap:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(212,149,42,.07)}
+.chat-inp{flex:1;background:none;border:none;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;resize:none;max-height:160px;min-height:22px;line-height:1.55;-webkit-user-select:text;user-select:text}
+.chat-inp::placeholder{color:var(--text-dim)}
+.send-btn{width:34px;height:34px;border-radius:8px;border:none;background:var(--accent);color:#0a0908;cursor:pointer;display:grid;place-items:center;flex-shrink:0;transition:all .15s}
+.send-btn:hover{background:var(--accent2);transform:scale(1.05)}
+.send-btn:disabled{opacity:.3;cursor:not-allowed;transform:none}
+.send-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.inp-hint{font-size:10px;color:var(--text-dim);padding:5px 2px 0;display:flex;justify-content:space-between}
 
-        .regularTable td,
-        .regularTable th {
-            padding: 0;
-            vertical-align: top;
-            border-top: 0px;
-        }
+/* PREVIEW */
+.preview-panel{width:var(--preview-w);flex-shrink:0;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;transition:width .3s cubic-bezier(0.2,0,0,1),border-width .3s;overflow:hidden}
+.preview-panel.closed{width:0;border-left-width:0}
+.preview-top{padding:11px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px;flex-shrink:0;min-width:0}
+.preview-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;flex:1;white-space:nowrap}
+.preview-tabs{display:flex;gap:2px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:2px;flex-shrink:0}
+.ptab{padding:4px 10px;border-radius:5px;border:none;background:none;font-family:var(--mono);font-size:10px;color:var(--text-muted);cursor:pointer;transition:all .12s;white-space:nowrap}
+.ptab.on{background:var(--surface2);color:var(--text);border:1px solid var(--border2)}
+.preview-body{flex:1;position:relative;overflow:hidden}
+.preview-iframe{width:100%;height:100%;border:none;background:#fff}
+.preview-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text-dim);font-size:11px;text-align:center;padding:32px}
+.preview-empty i{font-size:28px;opacity:.3;margin-bottom:4px}
 
-        .lightpurple {
-            background-color: rgb(189, 174, 173);
-        }
+/* GAME SAVES SHELF */
+.saves-shelf{border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;overflow:hidden;transition:max-height .3s cubic-bezier(0.2,0,0,1)}
+.saves-shelf.empty{max-height:0;border-top-width:0}
+.saves-shelf.has-saves{max-height:120px}
+.saves-inner{padding:8px 10px;display:flex;flex-direction:column;gap:6px}
+.saves-row{display:flex;align-items:center;gap:6px}
+.saves-label{font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;white-space:nowrap}
+.saves-list{display:flex;gap:5px;flex-wrap:wrap;flex:1}
+.save-pill{display:flex;align-items:center;gap:5px;padding:4px 9px 4px 10px;border-radius:20px;border:1px solid var(--border2);background:var(--surface2);font-size:11px;color:var(--text-muted);cursor:pointer;transition:all .12s;max-width:160px}
+.save-pill:hover{border-color:rgba(212,149,42,.3);background:var(--accent-dim);color:var(--accent)}
+.save-pill.active-save{border-color:rgba(212,149,42,.4);background:var(--accent-dim);color:var(--accent2)}
+.save-pill-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.save-pill-play{font-size:9px;opacity:.7;flex-shrink:0}
+.save-pill-del{width:14px;height:14px;border-radius:3px;border:none;background:none;color:var(--text-dim);cursor:pointer;display:grid;place-items:center;font-size:9px;flex-shrink:0;transition:all .1s;padding:0}
+.save-pill-del:hover{color:var(--danger);background:rgba(192,97,74,.15)}
+.saves-save-btn{padding:4px 10px;border-radius:6px;border:1px solid var(--border2);background:none;font-family:var(--mono);font-size:10px;color:var(--text-muted);cursor:pointer;transition:all .12s;white-space:nowrap;display:flex;align-items:center;gap:5px;flex-shrink:0}
+.saves-save-btn:hover{color:var(--accent);border-color:rgba(212,149,42,.3);background:var(--accent-dim)}
+.saves-save-btn i{font-size:9px}
+/* save name modal */
+.save-name-modal{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;box-shadow:0 -16px 48px rgba(0,0,0,.7);z-index:600;display:none;min-width:220px}
+.save-name-modal.open{display:block;animation:mIn .15s ease}
+.save-name-modal input{width:100%;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;margin-bottom:8px}
+.save-name-modal input:focus{border-color:var(--accent)}
+.save-name-modal-btns{display:flex;gap:6px}
+.save-name-modal-btns button{flex:1;padding:6px;border-radius:6px;border:1px solid var(--border);background:none;font-family:var(--mono);font-size:11px;color:var(--text-muted);cursor:pointer;transition:all .1s}
+.save-name-modal-btns button:hover{color:var(--text);background:var(--surface3)}
+.save-name-modal-btns button.accent{background:var(--accent);border-color:var(--accent);color:#0a0908}
+.save-name-modal-btns button.accent:hover{background:var(--accent2)}
 
-        .darkpurple {
-            background-color: rgb(238, 21, 21);
-            background-color: rgb(199, 199, 230);
-        }
+/* SETTINGS MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:1000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(12px);padding:16px}
+.modal-bg.open{display:flex;animation:bkIn .18s ease}
+@keyframes bkIn{from{opacity:0}to{opacity:1}}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:16px;width:530px;max-width:100%;max-height:calc(100vh - 32px);overflow-y:auto;box-shadow:0 40px 120px rgba(0,0,0,.9);animation:mIn .22s cubic-bezier(0.2,0,0,1)}
+@keyframes mIn{from{opacity:0;transform:scale(0.94) translateY(10px)}to{opacity:1;transform:none}}
+.modal-head{padding:22px 24px 0;display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.modal-title{font-family:var(--serif);font-size:20px;letter-spacing:-.3px}
+.modal-x{width:30px;height:30px;border-radius:7px;border:1px solid var(--border);background:none;color:var(--text-muted);cursor:pointer;display:grid;place-items:center;font-size:16px;transition:all .12s}
+.modal-x:hover{color:var(--text);background:var(--surface2)}
+.modal-body{padding:0 24px 24px}
+.s-sec{margin-bottom:20px}
+.s-lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.9px;margin-bottom:7px;display:block}
+.s-inp{width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;transition:border-color .15s}
+.s-inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(212,149,42,.08)}
+.s-ta{width:100%;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;resize:vertical;min-height:120px;line-height:1.6;transition:border-color .15s}
+.s-ta:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(212,149,42,.08)}
+.s-hint{font-size:10px;color:var(--text-dim);margin-top:5px;line-height:1.6}
+.modal-btns{display:flex;gap:8px;margin-top:18px}
+.m-btn{flex:1;padding:9px;border-radius:8px;border:1px solid var(--border);background:none;font-family:var(--mono);font-size:12px;color:var(--text-muted);cursor:pointer;transition:all .15s}
+.m-btn:hover{color:var(--text);background:var(--surface2)}
+.m-btn.accent{background:var(--accent);border-color:var(--accent);color:#0a0908}
+.m-btn.accent:hover{background:var(--accent2)}
 
-        .buttonhold {
-            background-color: lightsalmon;
-        }
-        
-        .nav-tabs .nav-item.show .nav-link,
-        .nav-tabs .nav-link.active {
-            color: #007bff;
-        }
-    </style>
-    <style> body { background-color: black; } </style>
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:10px 18px;font-size:12px;color:var(--text);z-index:9999;transition:transform .3s cubic-bezier(0.2,0,0,1),opacity .3s;opacity:0;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.toast.ok{border-color:rgba(212,149,42,.35);color:var(--accent)}
+.toast.err{border-color:rgba(192,97,74,.35);color:var(--danger)}
+
+@media(max-width:700px){
+  .sidebar{position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);box-shadow:4px 0 40px rgba(0,0,0,.7)}
+  .sidebar.open{transform:none}
+  .sidebar-overlay.open{display:block}
+  .topbar-menu{display:grid}
+  .preview-panel{display:none}
+  .messages{padding:16px 13px}
+  .msg-bubble{max-width:88%}
+}
+</style>
 </head>
-
 <body>
-    <canvas id="canvas" style="width: 640px;display: none;"></canvas>
 
-	<script src="gl2gpu.js"></script>
-	
-    
-    <div id="maindiv" class="container text-center">
-        <div id="topPanel" style="display: none;">
+<!-- AUTH -->
+<div id="auth-page" class="page active">
+  <div class="auth-glow"></div>
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="auth-icon"><i class="fa-solid fa-fire-flame-curved"></i></div>
+      <span class="auth-name">Ember</span>
+    </div>
+    <div class="auth-err" id="auth-err"></div>
 
-            <!-- BEFORE LOAD -->
-            <div rv-if="data.beforeEmulatorStarted">
-                <button id="btnPlayGame" class="btn btn-primary mt-4" onclick="myClass.loadRom();" rv-if="data.hasRoms"
-                    rv-disabled="data.moduleInitializing">Play Game</button>
-                <button id="btnUploadRom" class="btn btn-primary mt-4" onclick="myApp.uploadBrowse()"
-                        rv-disabled="data.moduleInitializing">Choose File</button>
-                <button type="button" class="btn btn-primary mt-4" id="btnRemap" onclick="myApp.showRemapModal()">
-                    Settings
-                </button>
-		<button id="update-files" class="btn btn-primary mt-4">Update</button>
-                <span rv-if="data.showLogin">
-                    <button class="btn btn-primary mt-4" rv-if="data.loggedIn | ev '==false'"
-                        onclick="myApp.loginModal()">Login</button>
-                    <button class="btn btn-primary mt-4" rv-if="data.loggedIn | ev '==true'"  
-                        onclick="myApp.logout()">Logout</button>
-                </span>
-
-                <div class="form-check" style="margin-top: 13px;" rv-if="data.settings.SHOWADVANCED">
-                    <label class="form-check-label" style="margin-right: 10px;">
-                        <input type="checkbox" class="form-check-input" rv-checked="data.chkAdvanced" rv-disabled="data.moduleInitializing">
-                        Advanced
-                    </label>
-                </div>
-
-                <div class="card" style="width: 18rem;margin-left: auto;margin-right: auto;margin-top: 20px;margin-bottom: 31px;" 
-                    rv-if="data.chkAdvanced">
-                    <div class="card-body">
-                        <h5 class="card-title">Advanced</h5>
-                        <h6 class="card-subtitle mb-2 text-muted">Options</h6>
-                            
-                            <button id="btnUploadEep" class="btn btn-secondary mt-4" onclick="myApp.uploadEepBrowse()">
-                                Import Save File (EEP)</button>
-                            <div rv-if="data.eepName | ev_string '.length > 0'">
-                                { data.eepName }
-                            </div>
-
-                            <button id="btnUploadSra" class="btn btn-secondary mt-4" onclick="myApp.uploadSraBrowse()">
-                                Import Save File (SRA)</button>
-                            <div rv-if="data.sraName | ev_string '.length > 0'">
-                                { data.sraName }
-                            </div>
-
-                            <button id="btnUploadFla" class="btn btn-secondary mt-4" onclick="myApp.uploadFlaBrowse()">
-                                Import Save File (FLA)</button>
-                            <div rv-if="data.flaName | ev_string '.length > 0'">
-                                { data.flaName }
-                            </div>
-
-                        <!-- <a href="#" class="card-link">Card link</a>
-                        <a href="#" class="card-link">Another link</a> -->
-                    </div>
-                </div>
-
-
-
-                <input id="file-upload-eep" type="file" />
-                <input id="file-upload-sra" type="file" />
-                <input id="file-upload-fla" type="file" />
-                <input id="file-upload" type="file" />
-
-                <!-- ROM LIST -->
-                <div class="form-group mt-2 mb-4" rv-if="data.hasRoms" style="width: 300px;margin-left: auto; margin-right:auto;">
-                    <select class="form-control" id="romselect">
-                        <option rv-each-rom="data.romList" rv-value="rom.url">{rom.title}</option>
-                    </select>
-                </div>
-
-                <!-- SAVE STATES -->
-                <div id="dbSaveStates" rv-if="data.loggedIn | ev '==true'">
-                    <button id="btnLoadRomAndSaveState" class="btn btn-primary mt-2 mb-2" onclick="myApp.loadRomAndSavestate()"
-                        rv-disabled="data.moduleInitializing">Load Savestate</button>
-                    <div class="form-group mt-2 mb-4" style="width: 300px;margin-left: auto; margin-right:auto;">
-                        <select class="form-control" id="savestateSelect">
-                            <option rv-each-item="data.n64SaveStates" rv-value="item.Name">{item.Name}</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-
-            <!-- AFTER LOAD -->
-            <div rv-hide="data.beforeEmulatorStarted">
-                <div class="btn-group mt-2 mb-2" rv-if="data.settings.SHOWADVANCED">
-                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Advanced
-                    </button>
-                    <div class="dropdown-menu">
-                        <a class="dropdown-item" onclick="myApp.exportEep()" style="cursor: pointer;">Export Save (EEP)</a>
-                        <a class="dropdown-item" onclick="myApp.exportSra()" style="cursor: pointer;">Export Save (SRA)</a>
-                        <a class="dropdown-item" onclick="myApp.exportFla()" style="cursor: pointer;">Export Save (FLA)</a>
-                    </div>
-                </div>
-                <div class="btn-group mt-2 mb-2" rv-if="data.settings.SHOWOPTIONS">
-                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Options
-                    </button>
-                    <div class="dropdown-menu">
-                        <a class="dropdown-item" onclick="myApp.reset()" style="cursor: pointer;">Reset</a>
-                    </div>
-                </div>
-                <button rv-if="data.loggedIn | ev '==true'" class="btn btn-primary mt-2 mb-2" 
-                    onclick="myApp.saveCloud()" >Save Cloud</button>
-                <button rv-if="data.loggedIn | ev '==true'" class="btn btn-primary mt-2 mb-2" 
-                    onclick="myApp.loadCloud()"  rv-disabled="data.noCloudSave">Load Cloud</button>
-                
-
-            </div>
-
-            <div rv-if="data.iosShowWarning" class="mt-4">
-                <div class="alert alert-info" role="alert">
-                    <b>NOTE: </b>On iOS 16 and above in order to improve the framerate you should disable the following: Settings -> Safari -> 
-                    Advanced -> Experimental Features -> GPU Process: WebGL. Then restart safari and it should take effect.
-                  </div>
-            </div>
-
-            <div style="margin-top:40px;" rv-if="data.beforeEmulatorStarted">
-                <div id="dropArea" style="width: 150px; height: 150px; border: gray 1px solid;margin-left: auto;
-                    color: darkgrey;margin-right: auto; border-style: dashed;">
-                    <br>
-                    <br>
-                    Drag/Drop 
-                    <br>
-                    Rom File
-                </div>
-            </div>
-        </div>
-
-        <div id="lblErrorOuter" style="display: none;">
-            <div rv-if="data.lblError | ev_string '.length > 0'"
-                class="alert alert-danger mt-4" id="lblError" role="alert" 
-                rv-html="data.lblError">
-            </div>
-        </div>
-
-         <div id="mydiv" class="mt-4"></div>  
-
-        <div id="bottomPanel" rv-hide="data.beforeEmulatorStarted">
-            <!-- <div>{ data.audioSkipCount}</div> -->
-        </div>
+    <div id="v-login">
+      <div class="auth-title">Welcome back.</div>
+      <div class="auth-sub">Sign in to continue</div>
+      <div class="fld"><label class="lbl">Email</label><input class="inp" id="l-email" type="email" placeholder="you@email.com" autocomplete="email"></div>
+      <div class="fld"><label class="lbl">Password</label><input class="inp" id="l-pw" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <button class="auth-btn" id="l-btn" onclick="doLogin()">Sign In</button>
+      <div class="auth-switch">No account? <a onclick="showView('signup')">Sign up</a></div>
     </div>
 
-    <!-- Mobile UX -->
-    <div id="mobileButtons" style="display: none;text-align: center;background: white;
-                   padding-top: 20px;padding-bottom: 20px;">
-        <div style="margin-bottom: 10px;">
-            <button class="btn btn-primary mt-2 mb-2" onclick="myApp.newRom()" >New Rom</button>
-            <button rv-if="data.loggedIn | ev '==true'" class="btn btn-primary mt-2 mb-2" onclick="myApp.saveCloud()" >Save Cloud</button>
-            <button rv-if="data.loggedIn | ev '==true'" class="btn btn-primary mt-2 mb-2" onclick="myApp.loadCloud()" rv-disabled="data.noCloudSave">Load Cloud</button>
-            <button rv-if="data.loggedIn | ev '==false'" class="btn btn-primary mt-2 mb-2" onclick="myApp.saveStateLocal()" >Save State</button>
-            <button rv-if="data.loggedIn | ev '==false'" class="btn btn-primary mt-2 mb-2" onclick="myApp.loadStateLocal()" rv-disabled="data.noLocalSave" >Load State</button>
+    <div id="v-signup" style="display:none">
+      <div class="auth-title">Create account.</div>
+      <div class="auth-sub">Join Ember</div>
+      <div class="fld"><label class="lbl">Email</label><input class="inp" id="s-email" type="email" placeholder="you@email.com" autocomplete="email"></div>
+      <div class="fld">
+        <label class="lbl">Password</label>
+        <input class="inp" id="s-pw" type="password" placeholder="••••••••" autocomplete="new-password" oninput="checkPw(this.value)">
+        <div class="pw-rules"><span class="pw-rule" id="rU">A upper</span><span class="pw-rule" id="rL">a lower</span><span class="pw-rule" id="rN">0 number</span><span class="pw-rule" id="rS">* special</span></div>
+      </div>
+      <button class="auth-btn" id="s-btn" onclick="doSignup()">Create Account</button>
+      <div class="auth-switch">Have an account? <a onclick="showView('login')">Sign in</a></div>
+    </div>
+
+    <div id="v-onboard" style="display:none">
+      <div class="auth-title">One more thing.</div>
+      <div class="auth-sub">Choose a display name</div>
+      <div class="fld"><label class="lbl">Display Name</label><input class="inp" id="o-name" type="text" placeholder="Your name" maxlength="30" onkeydown="if(event.key==='Enter')doOnboard()"></div>
+      <button class="auth-btn" id="o-btn" onclick="doOnboard()">Enter Ember</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-page" class="page">
+  <div class="sidebar-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
+
+  <div class="sidebar" id="sidebar">
+    <div class="sb-top">
+      <span class="sb-brand" id="sb-brand"><i class="fa-solid fa-fire-flame-curved" style="color:var(--accent);margin-right:6px"></i>Ember</span>
+      <button class="icon-btn" onclick="openSettings()" title="Settings">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      </button>
+    </div>
+    <button class="new-btn" onclick="newConvo()">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New conversation
+    </button>
+    <div class="sb-sec">Recent</div>
+    <div class="convo-list" id="convo-list"><div class="convo-empty">No conversations yet.</div></div>
+    <div class="sb-footer">
+      <div class="user-row" id="user-row" onclick="toggleUserMenu()">
+        <div class="user-av" id="user-av">?</div>
+        <span class="user-nm" id="user-nm">…</span>
+        <i class="fa-solid fa-ellipsis" style="font-size:10px;color:var(--text-dim)"></i>
+        <div class="user-menu" id="user-menu">
+          <button class="um-item" onclick="openSettings();event.stopPropagation()"><i class="fa-solid fa-sliders"></i> Settings & Persona</button>
+          <button class="um-item danger" onclick="doLogout();event.stopPropagation()"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</button>
         </div>
-        <button type="button" class="btn btn-primary" onclick="myApp.hideMobileMenu()">
-            Hide
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <button class="topbar-menu" id="topbar-menu" onclick="openSidebar()">
+        <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="topbar-title" id="topbar-title">Ember</div>
+      <button class="tb-btn" onclick="clearChat()" title="Clear conversation">
+        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+      </button>
+      <button class="tb-btn" id="preview-btn" onclick="togglePreview()" title="Toggle sandbox preview">
+        <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      </button>
+    </div>
+
+    <div class="messages" id="messages">
+      <div class="welcome" id="welcome">
+        <div class="welcome-icon"><i class="fa-solid fa-fire-flame-curved"></i></div>
+        <h2>I'm Ember.</h2>
+        <p>Your personal coding assistant. Ask me anything — I build, explain, create, and think with you.</p>
+        <div class="chips">
+          <div class="chip" onclick="chipSend('Build me a snake game in HTML, CSS, and JavaScript')"><i class="fa-solid fa-gamepad"></i> Build a game</div>
+          <div class="chip" onclick="chipSend('Explain how async/await works in JavaScript with examples')"><i class="fa-solid fa-bolt"></i> Explain async/await</div>
+          <div class="chip" onclick="chipSend('Create a beautiful animated landing page in HTML/CSS')"><i class="fa-solid fa-wand-magic-sparkles"></i> Landing page</div>
+          <div class="chip" onclick="chipSend('What are REST API best practices?')"><i class="fa-solid fa-satellite-dish"></i> API design tips</div>
+          <div class="chip" onclick="chipSend('Write a Python script to scrape a webpage')"><i class="fa-brands fa-python"></i> Python script</div>
+          <div class="chip" onclick="chipSend('Write a short poem about rain at midnight')"><i class="fa-solid fa-feather"></i> Write a poem</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-wrap">
+        <textarea class="chat-inp" id="chat-inp" placeholder="Ask Ember anything…" rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="send-btn" id="send-btn" onclick="sendMessage()">
+          <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
+      </div>
+      <div class="inp-hint"><span>Shift+Enter for new line</span><span id="model-lbl">claude-sonnet-4-20250514</span></div>
     </div>
-    <div id="mobileDiv" style="display: none;height: 100%;">
-        <div id="mobileCanvas">
-    
-        </div>
-    
-        <div id="mobileBottomPanel" style="font-size: 36px;height:100%;text-align: center!important;background: white;">
-            <table style="width: 100%;" cellpadding=0 cellspacing=0>
-                <tr>
-                    <td style="border-right: 1px solid rgb(72,72,72);width:50%;">
-                        <div id="mobileStart" class="lightpurple" rv-class-buttonhold="data.inputController.MobileStart">
-                            Start
-                        </div>
-                    </td>
-                    <td>
-                    <div id="mobileSelect" class="lightpurple" rv-class-buttonhold="data.inputController.MobileSelect">
-                        <span rv-if="data.useZasCMobile | ev '==false'">Z</span>
-                        <span rv-if="data.useZasCMobile | ev '==true'">C (Hold)</span>
-                    </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="border-right: 1px solid rgb(72,72,72);">
-                        <div id="mobileB" class="darkpurple" rv-class-buttonhold="data.inputController.MobileB">
-                            B
-                        </div>
-                    </td>
-                    <td>
-                        <div id="mobileA" class="darkpurple" rv-class-buttonhold="data.inputController.MobileA">
-                            A
-                        </div>
-                    </td>
-                </tr>
-            </table>
-            <!-- <div style="color: lightgray;height:100%;" id="divTouchSurface">
-                <div style="padding-top: 20px;height: 800px;" id="startDiv">
-                    << Swipe to Move>>
-                </div>
-            </div> -->
-            <div style="margin-left: auto;margin-right: auto;width: 100%;height: 800px;">
-                <div id="divTouchSurface" style="color: lightgray;position: absolute;width: 100%;height: 800px;">
-                    <div style="padding-top: 20px;" id="startDiv" style="-webkit-touch-callout: none; /* iOS Safari */
-                    -webkit-user-select: none; /* Safari */
-                     -khtml-user-select: none; /* Konqueror HTML */
-                       -moz-user-select: none; /* Old versions of Firefox */
-                        -ms-user-select: none; /* Internet Explorer/Edge */
-                            user-select: none; /* Non-prefixed version, currently
-                                                  supported by Chrome, Edge, Opera and Firefox */">
-                        Virtual Joystick
-                    </div>
-                </div>
-            </div>
-    
-            <div id="menuDiv"
-                style="opacity: 0.5; background-color: rgba(243,244,244,1);width: 70px;position: absolute; top:0px;left:170px;font-size: 14px;">
-                -MENU-
-            </div>
-    
-    
-        </div>
+  </div>
+
+  <div class="preview-panel closed" id="preview-panel">
+    <div class="preview-top">
+      <span class="preview-label">Sandbox</span>
+      <div class="preview-tabs">
+        <button class="ptab on" id="ptab-preview" onclick="switchTab('preview')">Preview</button>
+        <button class="ptab" id="ptab-code" onclick="switchTab('code')">Source</button>
+      </div>
+      <button class="tb-btn" onclick="togglePreview()" style="margin-left:4px" title="Close">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
-
-    <!--  Login Modal -->
-    <div class="modal fade" id="loginModal" tabindex="-1" role="dialog" aria-labelledby="loginModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="loginModalLabel">Login</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label>Password</label>
-                        <input type="password" class="form-control" id="txtPassword" autocomplete="off"
-                            rv-value="data.password" onkeydown="" placeholder="Enter Password">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" onclick="myApp.loginSubmit()">Submit</button>
-                </div>
-            </div>
-        </div>
+    <div id="preview-body" class="preview-body">
+      <div class="preview-empty"><i class="fa-solid fa-code"></i><span>Code from responses<br>will appear here.</span></div>
     </div>
-
-
-    <!-- Keymapping Modal -->
-    <div class="modal fade" id="buttonsModal" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Settings</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body" id="modalMain" style="padding-bottom: 0;">
-                    <ul class="nav nav-tabs" rv-hide="data.remapWait">
-                        <li class="nav-item">
-                            <a class="nav-link" rv-class-active="data.remapPlayer1" style="cursor: pointer;"
-                                onclick="myApp.swapRemap('player1')">Player 1</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" rv-class-active="data.remapOptions" style="cursor: pointer;"
-                                onclick="myApp.swapRemap('options')">Options</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" rv-class-active="data.remapGameshark" style="cursor: pointer;"
-                                onclick="myApp.swapRemap('gameshark')">GameShark</a>
-                        </li>
-                    </ul>
-                    <div rv-if="data.remapPlayer1">
-                        <table class="table" rv-hide="data.remapWait">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Button</th>
-                                    <th scope="col">Keyboard</th>
-                                    <th scope="col">Joypad</th>
-                                    <th scope="col">Remap</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <th scope="row">D-Up</th>
-                                    <td>
-                                        <input rv-value="data.remappings.Mapping_Up" type="text" class="form-control"
-                                            disabled>
-                                    </td>
-                                    <td>
-                                        <input rv-value="data.remappings.Joy_Mapping_Up" type="text" class="form-control"
-                                            disabled>
-                                    </td>
-                                    <td>
-                                        <table class="regularTable">
-                                            <tr>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapKey(1)"
-                                                        class="btn btn-primary">Key</button>
-                                                </td>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapJoy(1)"
-                                                        class="btn btn-primary ml-2">Joypad</button>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">D-Down</th>
-                                    <td>
-                                        <input rv-value="data.remappings.Mapping_Down" type="text" class="form-control"
-                                            disabled>
-                                    </td>
-                                    <td>
-                                        <input rv-value="data.remappings.Joy_Mapping_Down" type="text" class="form-control"
-                                            disabled>
-                                    </td>
-                                    <td>
-                                        <table class="regularTable">
-                                            <tr>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapKey(2)"
-                                                        class="btn btn-primary">Key</button>
-                                                </td>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapJoy(2)"
-                                                        class="btn btn-primary ml-2">Joypad</button>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">D-Left</th>
-                                    <td>
-                                        <input rv-value="data.remappings.Mapping_Left" type="text" class="form-control"
-                                            disabled>
-                                    </td>
-                                    <td>
-                                        <input rv-value="data.remappings.Joy_Mapping_Left" type="text" class="form-control"
-                                            disabled>
-                                    </td>
-                                    <td>
-                                        <table class="regularTable">
-                                            <tr>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapKey(3)"
-                                                        class="btn btn-primary">Key</button>
-                                                </td>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapJoy(3)"
-                                                        class="btn btn-primary ml-2">Joypad</button>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">D-Right</th>
-                                    <td>
-                                        <input rv-value="data.remappings.Mapping_Right" type="text" class="form-control"
-                                            disabled>
-                                    </td>
-                                    <td>
-                                        <input rv-value="data.remappings.Joy_Mapping_Right" type="text" class="form-control"
-                                            disabled>
-                                    </td>
-                                    <td>
-                                        <table class="regularTable">
-                                            <tr>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapKey(4)"
-                                                        class="btn btn-primary">Key</button>
-                                                </td>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapJoy(4)"
-                                                        class="btn btn-primary ml-2">Joypad</button>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">A</th>
-                                    <td>
-                                        <input rv-value="data.remappings.Mapping_Action_A" type="text" class="form-control"
-                                            disabled>
-                                    </td>
-                                    <td>
-                                        <input rv-value="data.remappings.Joy_Mapping_Action_A" type="text"
-                                            class="form-control" disabled>
-                                    </td>
-                                    <td>
-                                        <table class="regularTable">
-                                            <tr>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapKey(5)"
-                                                        class="btn btn-primary">Key</button>
-                                                </td>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapJoy(5)"
-                                                        class="btn btn-primary ml-2">Joypad</button>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">B</th>
-                                    <td>
-                                        <input rv-value="data.remappings.Mapping_Action_B" type="text" class="form-control"
-                                            disabled>
-                                    </td>
-                                    <td>
-                                        <input rv-value="data.remappings.Joy_Mapping_Action_B" type="text"
-                                            class="form-control" disabled>
-                                    </td>
-                                    <td>
-                                        <table class="regularTable">
-                                            <tr>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapKey(6)"
-                                                        class="btn btn-primary">Key</button>
-                                                </td>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapJoy(6)"
-                                                        class="btn btn-primary ml-2">Joypad</button>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">Start</th>
-                                    <td>
-                                        <input rv-value="data.remappings.Mapping_Action_Start" type="text"
-                                            class="form-control" disabled>
-                                    </td>
-                                    <td>
-                                        <input rv-value="data.remappings.Joy_Mapping_Action_Start" type="text"
-                                            class="form-control" disabled>
-                                    </td>
-                                    <td>
-                                        <table class="regularTable">
-                                            <tr>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapKey(8)"
-                                                        class="btn btn-primary">Key</button>
-                                                </td>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapJoy(8)"
-                                                        class="btn btn-primary ml-2">Joypad</button>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">Z</th>
-                                    <td>
-                                        <input rv-value="data.remappings.Mapping_Action_Z" type="text"
-                                            class="form-control" disabled>
-                                    </td>
-                                    <td>
-                                        <input rv-value="data.remappings.Joy_Mapping_Action_Z" type="text"
-                                            class="form-control" disabled>
-                                    </td>
-                                    <td>
-                                        <table class="regularTable">
-                                            <tr>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapKey(10)"
-                                                        class="btn btn-primary">Key</button>
-                                                </td>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapJoy(10)"
-                                                        class="btn btn-primary ml-2">Joypad</button>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">L</th>
-                                    <td>
-                                        <input rv-value="data.remappings.Mapping_Action_L" type="text"
-                                            class="form-control" disabled>
-                                    </td>
-                                    <td>
-                                        <input rv-value="data.remappings.Joy_Mapping_Action_L" type="text"
-                                            class="form-control" disabled>
-                                    </td>
-                                    <td>
-                                        <table class="regularTable">
-                                            <tr>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapKey(11)"
-                                                        class="btn btn-primary">Key</button>
-                                                </td>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapJoy(11)"
-                                                        class="btn btn-primary ml-2">Joypad</button>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">R</th>
-                                    <td>
-                                        <input rv-value="data.remappings.Mapping_Action_R" type="text"
-                                            class="form-control" disabled>
-                                    </td>
-                                    <td>
-                                        <input rv-value="data.remappings.Joy_Mapping_Action_R" type="text"
-                                            class="form-control" disabled>
-                                    </td>
-                                    <td>
-                                        <table class="regularTable">
-                                            <tr>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapKey(12)"
-                                                        class="btn btn-primary">Key</button>
-                                                </td>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapJoy(12)"
-                                                        class="btn btn-primary ml-2">Joypad</button>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">Menu</th>
-                                    <td>
-                                        <input rv-value="data.remappings.Mapping_Menu" type="text"
-                                            class="form-control" disabled>
-                                    </td>
-                                    <td>
-                                        <input rv-value="data.remappings.Joy_Mapping_Menu" type="text"
-                                            class="form-control" disabled>
-                                    </td>
-                                    <td>
-                                        <table class="regularTable">
-                                            <tr>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapKey(9)"
-                                                        class="btn btn-primary">Key</button>
-                                                </td>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapJoy(9)"
-                                                        class="btn btn-primary ml-2">Joypad</button>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">CUP</th>
-                                    <td>
-                                        <input rv-value="data.remappings.Mapping_Action_CUP" type="text"
-                                            class="form-control" disabled>
-                                    </td>
-                                    <td>
-                                        
-                                    </td>
-                                    <td>
-                                        <table class="regularTable">
-                                            <tr>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapKey(13)"
-                                                        class="btn btn-primary">Key</button>
-                                                </td>
-                                                <td>
-                                                    
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">CDOWN</th>
-                                    <td>
-                                        <input rv-value="data.remappings.Mapping_Action_CDOWN" type="text"
-                                            class="form-control" disabled>
-                                    </td>
-                                    <td>
-                                        
-                                    </td>
-                                    <td>
-                                        <table class="regularTable">
-                                            <tr>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapKey(14)"
-                                                        class="btn btn-primary">Key</button>
-                                                </td>
-                                                <td>
-                                                    
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">CLEFT</th>
-                                    <td>
-                                        <input rv-value="data.remappings.Mapping_Action_CLEFT" type="text"
-                                            class="form-control" disabled>
-                                    </td>
-                                    <td>
-                                        
-                                    </td>
-                                    <td>
-                                        <table class="regularTable">
-                                            <tr>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapKey(15)"
-                                                        class="btn btn-primary">Key</button>
-                                                </td>
-                                                <td>
-                                                    
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">CRIGHT</th>
-                                    <td>
-                                        <input rv-value="data.remappings.Mapping_Action_CRIGHT" type="text"
-                                            class="form-control" disabled>
-                                    </td>
-                                    <td>
-                                        
-                                    </td>
-                                    <td>
-                                        <table class="regularTable">
-                                            <tr>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapKey(16)"
-                                                        class="btn btn-primary">Key</button>
-                                                </td>
-                                                <td>
-                                                    
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">UP</th>
-                                    <td>
-                                        <input rv-value="data.remappings.Mapping_Action_Analog_Up" type="text"
-                                            class="form-control" disabled>
-                                    </td>
-                                    <td>
-                                        
-                                    </td>
-                                    <td>
-                                        <table class="regularTable">
-                                            <tr>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapKey(17)"
-                                                        class="btn btn-primary">Key</button>
-                                                </td>
-                                                <td>
-                                                    
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">DOWN</th>
-                                    <td>
-                                        <input rv-value="data.remappings.Mapping_Action_Analog_Down" type="text"
-                                            class="form-control" disabled>
-                                    </td>
-                                    <td>
-                                        
-                                    </td>
-                                    <td>
-                                        <table class="regularTable">
-                                            <tr>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapKey(18)"
-                                                        class="btn btn-primary">Key</button>
-                                                </td>
-                                                <td>
-                                                    
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">LEFT</th>
-                                    <td>
-                                        <input rv-value="data.remappings.Mapping_Action_Analog_Left" type="text"
-                                            class="form-control" disabled>
-                                    </td>
-                                    <td>
-                                        
-                                    </td>
-                                    <td>
-                                        <table class="regularTable">
-                                            <tr>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapKey(19)"
-                                                        class="btn btn-primary">Key</button>
-                                                </td>
-                                                <td>
-                                                    
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">RIGHT</th>
-                                    <td>
-                                        <input rv-value="data.remappings.Mapping_Action_Analog_Right" type="text"
-                                            class="form-control" disabled>
-                                    </td>
-                                    <td>
-                                        
-                                    </td>
-                                    <td>
-                                        <table class="regularTable">
-                                            <tr>
-                                                <td>
-                                                    <button type="button" onclick="myApp.btnRemapKey(20)"
-                                                        class="btn btn-primary">Key</button>
-                                                </td>
-                                                <td>
-                                                    
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <div rv-if="data.remapWait">
-                            <div class="mt-4 mb-4 text-center">
-                                Please press a { data.remapMode }
-                                <br>
-                                <br>
-                                { data.inputController.Key_Last }
-                                <br>
-                            </div>
-                        </div>
-                    </div>
-                    <div rv-if="data.remapOptions">
-                        <div class="mt-4 mb-4">
-
-			 <div style="margin-bottom: 10px;">
-                                <div style="margin-left: 3px;">Video Plugin</div>
-                                <div style="margin-left: 20px;margin-top: 3px;">
-                                    <input type="radio" name="videoplugin" id="pluginglide" value="glide" rv-checked="data.pluginTemp">
-                                    <label for="pluginglide">Glide (Best Overall)</label><br>
-                                    <input type="radio" name="videoplugin" id="pluginrice" value="rice" rv-checked="data.pluginTemp">
-                                    <label for="pluginrice">Rice (Better for certain games: Micro Machines, Wipeout)</label><br>
-                                    <input type="radio" name="videoplugin" id="pluginangry" value="angry" rv-checked="data.pluginTemp">
-                                    <label for="pluginangry">Software Renderer (very slow but highly accurate)</label><br>
-                                </div>
-                            </div>
-				
-                            <div>
-                                <label class="form-check-label" style="margin-left: 26px;">
-                                    <input type="checkbox" class="form-check-input" rv-checked="data.disableAudioSyncTemp">
-                                    Vertical Sync (improves refresh rate)
-                                </label>
-                            </div>
-
-                            <div class="mt-2">
-                                <label class="form-check-label" style="margin-left: 26px;">
-                                    <input type="checkbox" class="form-check-input" rv-checked="data.showFPSTemp">
-                                    Show FPS
-                                </label>
-                            </div>
-
-                            <div class="mt-2">
-                                <label class="form-check-label" style="margin-left: 26px;">
-                                    <input type="checkbox" class="form-check-input" rv-checked="data.swapSticksTemp">
-                                    Swap Left and Right Sticks (good for goldeneye)
-                                </label>
-                            </div>
-                            <div class="mt-2">
-                                <label class="form-check-label" style="margin-left: 26px;">
-                                    <input type="checkbox" class="form-check-input" rv-checked="data.mouseModeTemp">
-                                    Mouse Controls (good for starcraft)
-                                </label>
-                            </div>
-                            
-                            <div class="mt-2">
-                                <label class="form-check-label" style="margin-left: 26px;">
-                                    <input type="checkbox" class="form-check-input" rv-checked="data.invert2PTemp">
-                                    Player 2 Invert Y-Axis
-                                </label>
-                            </div>
-                            <div class="mt-2">
-                                <label class="form-check-label" style="margin-left: 26px;">
-                                    <input type="checkbox" class="form-check-input" rv-checked="data.invert3PTemp">
-                                    Player 3 Invert Y-Axis
-                                </label>
-                            </div>
-                            <div class="mt-2">
-                                <label class="form-check-label" style="margin-left: 26px;">
-                                    <input type="checkbox" class="form-check-input" rv-checked="data.invert4PTemp">
-                                    Player 4 Invert Y-Axis
-                                </label>
-                            </div>
-
-                            <div class="mt-2">
-                                <table>
-                                    <tr>
-                                        <td>Mobile</td>
-                                        <td>
-                                            <div>
-                                                <select class="form-control" rv-value="data.settingMobileTemp" id="ddlMobile" style="margin-left: 16px;">
-                                                    <option value="Auto">Auto Detect</option>
-                                                    <option value="ForceMobile">Force Mobile</option>
-                                                    <option value="ForceDesktop">Force Desktop</option>
-                                                </select>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </div>
-
-                        </div>
-                    </div>
-                    <div rv-if="data.remapGameshark">
-                        <div class="mt-4 mb-4">
-                            <table class="table" rv-hide="data.remapWait">
-                                <thead>
-                                    <tr>
-                                        <th scope="col">Active</th>
-                                        <th scope="col">Name</th>
-                                        <th scope="col">Address</th>
-                                        <th scope="col">Value</th>
-                                        <th scope="col"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr rv-each-cheat="data.cheats">
-                                        <th scope="row">
-                                            <label class="form-check-label" style="margin-left: 26px; margin-top: 5px;">
-                                                <input type="checkbox" class="form-check-input" rv-checked="cheat.active">
-                                                Active
-                                            </label>
-                                        </th>
-                                        <td>
-                                            <input rv-value="cheat.name" type="text" class="form-control" disabled>
-                                        </td>
-                                        <td>
-                                            <input rv-value="cheat.address" type="text" class="form-control" disabled>
-                                        </td>
-                                        <td>
-                                            <input rv-value="cheat.value" type="text" class="form-control" disabled>
-                                        </td>
-                                        <td style="text-align: center;">
-                                            <button type="button" class="btn btn-danger" rv-name="cheat.name" onclick="myApp.deleteCheat(this)">Delete</button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">
-                                        </th>
-                                        <td>
-                                            <input rv-value="data.cheatName" type="text" class="form-control">
-                                        </td>
-                                        <td>
-                                            <input rv-value="data.cheatAddress" type="text" class="form-control">
-                                        </td>
-                                        <td>
-                                            <input rv-value="data.cheatValue" type="text" class="form-control">
-                                        </td>
-                                        <td style="text-align: center;">
-                                            <button type="button" class="btn btn-success" onclick="myApp.addCheat()">Add</button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer" style="padding-top: 0;" rv-hide="data.remapWait">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <button type="button" onclick="myApp.restoreDefaultKeymappings()" class="btn btn-primary">Restore Defaults</button>
-                    <button type="button" class="btn btn-primary" onclick="myApp.saveRemap()">Save changes</button>
-                </div>
+    <!-- SAVES SHELF -->
+    <div class="saves-shelf empty" id="saves-shelf">
+      <div class="saves-inner">
+        <div class="saves-row">
+          <span class="saves-label">Saved</span>
+          <div class="saves-list" id="saves-list"></div>
+          <div style="position:relative;flex-shrink:0">
+            <button class="saves-save-btn" id="save-game-btn" onclick="toggleSaveNameModal()">
+              <i class="fa-solid fa-floppy-disk"></i> Save
+            </button>
+            <div class="save-name-modal" id="save-name-modal">
+              <input type="text" id="save-name-inp" placeholder="Game name…" maxlength="40" onkeydown="if(event.key==='Enter')confirmSave();if(event.key==='Escape')closeSaveNameModal()">
+              <div class="save-name-modal-btns">
+                <button onclick="closeSaveNameModal()">Cancel</button>
+                <button class="accent" onclick="confirmSave()">Save</button>
+              </div>
             </div>
+          </div>
         </div>
+      </div>
     </div>
-	
-    <script src="register_sw.js"></script>
-    <script src="settings.js"></script>
-    <script src="romlist.js"></script>
-    <script src="script.js"></script>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-bg" id="settings-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Settings & Persona</div>
+      <button class="modal-x" onclick="closeSettings()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="s-sec">
+        <label class="s-lbl">Assistant Name</label>
+        <input class="s-inp" id="sn-name" placeholder="Ember" maxlength="40">
+        <div class="s-hint">What your assistant calls itself.</div>
+      </div>
+      <div class="s-sec">
+        <label class="s-lbl">System Prompt / Personality</label>
+        <textarea class="s-ta" id="sn-prompt" placeholder="You are Ember, a highly intelligent and warm assistant…"></textarea>
+        <div class="s-hint">Defines tone, personality, and behavior. Sent with every message.</div>
+      </div>
+      <div class="s-sec">
+        <label class="s-lbl">Your Display Name</label>
+        <input class="s-inp" id="sn-displayname" placeholder="Your name" maxlength="30">
+      </div>
+      <div class="modal-btns">
+        <button class="m-btn" onclick="closeSettings()">Cancel</button>
+        <button class="m-btn accent" onclick="saveSettings()">Save Settings</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// Use the SAME Supabase project as Chat Bubble — accounts are shared automatically.
+// Both apps use the same auth.users and profiles table.
+const SUPABASE_URL  = 'https://YOUR_PROJECT.supabase.co';
+const SUPABASE_ANON = 'YOUR_ANON_KEY';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+const DEFAULT_SYSTEM = `You are Ember, a highly intelligent, warm, and precise coding and creative assistant. You excel at coding (all languages), science, creative writing, math, and general reasoning. You format responses beautifully using markdown — use headers, bold, inline code, fenced code blocks with language tags, bullet points, and blockquotes where appropriate. When writing code, always include a brief explanation. You are concise but never terse. You have a subtle personality: curious, direct, occasionally witty.`;
+const DEFAULT_AI_NAME = 'Ember';
+
+let currentUser = null, currentProfile = null;
+let currentConvoId = null, conversations = [], messages = [];
+let isStreaming = false, previewOpen = false;
+let currentPreviewHtml = '', currentPreviewSource = '', currentTab = 'preview';
+let settings = { aiName: DEFAULT_AI_NAME, systemPrompt: DEFAULT_SYSTEM, displayName: '' };
+let gameSaves = []; // [{id, name, html, state, conversation_id, updated_at}]
+let currentSaveId = null; // which save is currently loaded in the sandbox
+
+/* ── INIT ── */
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) { currentUser = session.user; await loadProfile(); }
+  sb.auth.onAuthStateChange(async (ev, session) => {
+    if (ev === 'SIGNED_IN' && session) { currentUser = session.user; await loadProfile(); }
+    else if (ev === 'SIGNED_OUT') { currentUser = null; showAuthPage(); }
+  });
+}
+
+async function loadProfile() {
+  const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+  if (!data) { showView('onboard'); return; }
+  currentProfile = data;
+  if (data.settings) { try { Object.assign(settings, JSON.parse(data.settings)); } catch(_) {} }
+  settings.displayName = data.display_name || currentUser.email?.split('@')[0] || 'You';
+  document.getElementById('user-nm').textContent = settings.displayName;
+  document.getElementById('user-av').textContent = (settings.displayName[0] || '?').toUpperCase();
+  applyBrandName();
+  showApp();
+  await loadConversations();
+  await loadGameSaves();
+}
+
+function applyBrandName() {
+  const n = settings.aiName || DEFAULT_AI_NAME;
+  document.getElementById('sb-brand').innerHTML = `<i class="fa-solid fa-fire-flame-curved" style="color:var(--accent);margin-right:6px"></i>${escHtml(n)}`;
+  document.getElementById('topbar-title').textContent = n;
+}
+
+/* ── AUTH ── */
+function showView(v) {
+  ['login','signup','onboard'].forEach(x => document.getElementById(`v-${x}`).style.display = x===v ? 'block' : 'none');
+  clearAuthErr();
+  if (v==='onboard') { document.getElementById('auth-page').classList.add('active'); document.getElementById('app-page').classList.remove('active'); }
+  setTimeout(() => { const m = {login:'l-email',signup:'s-email',onboard:'o-name'}[v]; if(m) document.getElementById(m).focus(); }, 80);
+}
+function clearAuthErr() { const e = document.getElementById('auth-err'); e.classList.remove('show'); e.textContent=''; }
+function showAuthErr(m) { const e = document.getElementById('auth-err'); e.textContent=m; e.classList.add('show'); }
+function checkPw(v) { document.getElementById('rU').classList.toggle('met',/[A-Z]/.test(v)); document.getElementById('rL').classList.toggle('met',/[a-z]/.test(v)); document.getElementById('rN').classList.toggle('met',/[0-9]/.test(v)); document.getElementById('rS').classList.toggle('met',/[^A-Za-z0-9]/.test(v)); }
+function validPw(pw) { return /[A-Z]/.test(pw)&&/[a-z]/.test(pw)&&/[0-9]/.test(pw)&&/[^A-Za-z0-9]/.test(pw); }
+
+async function doLogin() {
+  clearAuthErr();
+  const email = document.getElementById('l-email').value.trim(), pw = document.getElementById('l-pw').value;
+  if (!email || !pw) { showAuthErr('Please fill in all fields.'); return; }
+  const btn = document.getElementById('l-btn'); btn.disabled=true; btn.textContent='Signing in…';
+  const { error } = await sb.auth.signInWithPassword({ email, password: pw });
+  if (error) { showAuthErr(error.message); btn.disabled=false; btn.textContent='Sign In'; }
+}
+async function doSignup() {
+  clearAuthErr();
+  const email = document.getElementById('s-email').value.trim(), pw = document.getElementById('s-pw').value;
+  if (!email || !pw) { showAuthErr('Please fill in all fields.'); return; }
+  if (!validPw(pw)) { showAuthErr('Password needs uppercase, lowercase, number, and special character.'); return; }
+  const btn = document.getElementById('s-btn'); btn.disabled=true; btn.textContent='Creating…';
+  const { error } = await sb.auth.signUp({ email, password: pw });
+  btn.disabled=false; btn.textContent='Create Account';
+  if (error) showAuthErr(error.message);
+  else { document.getElementById('auth-err').style.color='var(--accent)'; document.getElementById('auth-err').style.borderColor='rgba(212,149,42,.3)'; showAuthErr('Check your email to confirm your account!'); }
+}
+async function doOnboard() {
+  const name = document.getElementById('o-name').value.trim();
+  if (!name) return;
+  const btn = document.getElementById('o-btn'); btn.disabled=true; btn.textContent='Setting up…';
+  const { error } = await sb.from('profiles').insert({ id: currentUser.id, display_name: name, settings: JSON.stringify(settings) });
+  if (error) { btn.disabled=false; btn.textContent='Enter Ember'; return; }
+  await loadProfile();
+}
+async function doLogout() { await sb.auth.signOut(); }
+
+/* ── PAGE ── */
+function showApp() { document.getElementById('auth-page').classList.remove('active'); document.getElementById('app-page').classList.add('active'); setTimeout(() => document.getElementById('chat-inp').focus(), 200); }
+function showAuthPage() { document.getElementById('app-page').classList.remove('active'); document.getElementById('auth-page').classList.add('active'); showView('login'); }
+function openSidebar() { document.getElementById('sidebar').classList.add('open'); document.getElementById('sb-overlay').classList.add('open'); }
+function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sb-overlay').classList.remove('open'); }
+function toggleUserMenu() { document.getElementById('user-menu').classList.toggle('open'); }
+document.addEventListener('click', e => { if (!e.target.closest('#user-row')) document.getElementById('user-menu').classList.remove('open'); });
+
+/* ── CONVERSATIONS ── */
+async function loadConversations() {
+  const { data } = await sb.from('conversations').select('*').eq('user_id', currentUser.id).order('updated_at', { ascending: false });
+  conversations = data || [];
+  renderConvoList();
+}
+
+function renderConvoList() {
+  const list = document.getElementById('convo-list');
+  if (!conversations.length) { list.innerHTML='<div class="convo-empty">No conversations yet.</div>'; return; }
+  list.innerHTML = conversations.map(c => `
+    <div class="convo-item ${c.id===currentConvoId?'active':''}" onclick="loadConvo('${c.id}')">
+      <span class="convo-title">${escHtml(c.title||'Untitled')}</span>
+      <button class="convo-del" onclick="deleteConvo(event,'${c.id}')"><i class="fa-solid fa-xmark"></i></button>
+    </div>`).join('');
+}
+
+async function newConvo() {
+  currentConvoId=null; messages=[];
+  document.getElementById('topbar-title').textContent = settings.aiName || DEFAULT_AI_NAME;
+  renderMessages(); renderConvoList(); closeSidebar();
+  document.getElementById('chat-inp').focus();
+}
+
+async function loadConvo(id) {
+  currentConvoId=id;
+  const c = conversations.find(x=>x.id===id);
+  document.getElementById('topbar-title').textContent = c?.title || 'Untitled';
+  const { data } = await sb.from('ai_messages').select('*').eq('conversation_id', id).order('created_at', { ascending: true });
+  messages = (data||[]).map(m => ({ role: m.role, content: m.content }));
+  renderMessages(); renderConvoList(); closeSidebar();
+  const lastAI = [...messages].reverse().find(m => m.role==='assistant');
+  if (lastAI) tryPopulatePreview(lastAI.content);
+}
+
+async function deleteConvo(e, id) {
+  e.stopPropagation();
+  await sb.from('ai_messages').delete().eq('conversation_id', id);
+  await sb.from('conversations').delete().eq('id', id);
+  if (currentConvoId===id) { currentConvoId=null; messages=[]; renderMessages(); }
+  await loadConversations();
+  showToast('Deleted.', '');
+}
+
+async function clearChat() {
+  if (currentConvoId) {
+    await sb.from('ai_messages').delete().eq('conversation_id', currentConvoId);
+    await sb.from('conversations').update({ title: 'Cleared', updated_at: new Date().toISOString() }).eq('id', currentConvoId);
+    await loadConversations();
+  }
+  messages=[]; renderMessages();
+  showToast('Conversation cleared.', 'ok');
+}
+
+/* ── RENDER MESSAGES ── */
+function renderMessages() {
+  const wrap = document.getElementById('messages');
+  const welcome = document.getElementById('welcome');
+  wrap.querySelectorAll('.msg-group').forEach(e=>e.remove());
+  if (!messages.length) { welcome.style.display='flex'; return; }
+  welcome.style.display='none';
+  messages.forEach(m => appendMsgEl(m.role, m.content));
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function appendMsgEl(role, content) {
+  const wrap = document.getElementById('messages');
+  document.getElementById('welcome').style.display='none';
+  const group = document.createElement('div');
+  group.className = `msg-group ${role}`;
+  if (role==='assistant') {
+    const av = document.createElement('div'); av.className='ai-av';
+    av.innerHTML='<i class="fa-solid fa-fire-flame-curved"></i>';
+    const bubble = document.createElement('div'); bubble.className='msg-bubble';
+    bubble.innerHTML = renderMd(content);
+    group.appendChild(av); group.appendChild(bubble);
+    setTimeout(() => group.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el)), 0);
+  } else {
+    const bubble = document.createElement('div'); bubble.className='msg-bubble';
+    bubble.textContent = content;
+    group.appendChild(bubble);
+  }
+  wrap.appendChild(group);
+  wrap.scrollTop = wrap.scrollHeight;
+  return group;
+}
+
+/* ── MARKDOWN ── */
+function renderMd(raw) {
+  if (!raw) return '';
+  // code blocks first
+  let html = raw.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+    const l = (lang||'plaintext').trim();
+    const canRun = ['html','javascript','js'].includes(l.toLowerCase());
+    return `\x00CODEBLOCK\x00${l}\x00${encodeURIComponent(code.trimEnd())}\x00${canRun?'1':'0'}\x00`;
+  });
+  // escape html in non-code parts
+  const parts = html.split('\x00CODEBLOCK\x00');
+  html = parts.map((part, i) => {
+    if (i % 2 === 0) {
+      let t = escHtml(part);
+      t = t.replace(/`([^`\n]+)`/g, '<code class="icode">$1</code>');
+      t = t.replace(/^### (.+)$/gm,'<h3>$1</h3>');
+      t = t.replace(/^## (.+)$/gm,'<h2>$1</h2>');
+      t = t.replace(/^# (.+)$/gm,'<h1>$1</h1>');
+      t = t.replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>');
+      t = t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+      t = t.replace(/\*(.+?)\*/g,'<em>$1</em>');
+      t = t.replace(/^&gt; (.+)$/gm,'<blockquote>$1</blockquote>');
+      t = t.replace(/^---$/gm,'<hr>');
+      t = t.replace(/^\s*[-*] (.+)$/gm,'<li>$1</li>');
+      t = t.replace(/(<li>[\s\S]*?<\/li>)/g, '<ul>$1</ul>');
+      t = t.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+      // wrap in paragraphs
+      t = t.split(/\n{2,}/).map(block => {
+        block = block.trim();
+        if (!block) return '';
+        if (/^<(h[1-3]|ul|ol|blockquote|hr|pre|div)/.test(block)) return block;
+        return `<p>${block.replace(/\n/g,'<br>')}</p>`;
+      }).join('\n');
+      return t;
+    } else {
+      // reconstruct code block
+      const [lang2, encoded, canRun2, ...rest] = part.split('\x00');
+      const code = decodeURIComponent(encoded);
+      const l2 = lang2 || 'plaintext';
+      return `<div class="code-block"><div class="code-head"><span class="code-lang">${escHtml(l2)}</span><div class="code-actions"><button class="code-btn" onclick="copyCodeBtn(this)">Copy</button>${canRun2==='1'?'<button class="code-btn" onclick="runCodeBtn(this)">▶ Run</button>':''}</div></div><pre><code class="language-${escHtml(l2)}">${escHtml(code)}</code></pre></div>`;
+    }
+  }).join('');
+  return html;
+}
+
+function copyCodeBtn(btn) {
+  const code = btn.closest('.code-block').querySelector('pre code').textContent;
+  navigator.clipboard.writeText(code).then(() => { btn.textContent='Copied!'; setTimeout(()=>btn.textContent='Copy', 2000); });
+}
+function runCodeBtn(btn) {
+  const block = btn.closest('.code-block');
+  const lang = block.querySelector('.code-lang').textContent.toLowerCase();
+  let code = block.querySelector('pre code').textContent;
+  let html = code;
+  if (lang==='javascript'||lang==='js') html=`<!DOCTYPE html><html><body><script>${code}<\/script></body></html>`;
+  openPreviewWithCode(html, code);
+}
+
+/* ── PREVIEW ── */
+function tryPopulatePreview(content) {
+  const m = content.match(/```html\n?([\s\S]*?)```/);
+  if (m) openPreviewWithCode(m[1], m[1]);
+}
+function openPreviewWithCode(html, source) {
+  // if it's the same html as the current save, keep the save link; otherwise it's a fresh run
+  if (currentPreviewHtml && html !== currentPreviewHtml) currentSaveId = null;
+  currentPreviewHtml = html; currentPreviewSource = source;
+  if (!previewOpen) { previewOpen=true; document.getElementById('preview-panel').classList.remove('closed'); document.getElementById('preview-btn').classList.add('on'); }
+  if (currentTab==='preview') renderIframe(); else renderSource();
+  renderSavesShelf();
+}
+function renderIframe() {
+  const body = document.getElementById('preview-body'); body.innerHTML='';
+  const iframe = document.createElement('iframe'); iframe.className='preview-iframe';
+  iframe.sandbox='allow-scripts allow-same-origin'; body.appendChild(iframe);
+  iframe.contentDocument.open(); iframe.contentDocument.write(currentPreviewHtml); iframe.contentDocument.close();
+}
+function renderSource() {
+  document.getElementById('preview-body').innerHTML = `<pre style="padding:16px;font-size:11px;line-height:1.6;overflow:auto;height:100%;margin:0;color:var(--text);background:var(--bg)">${escHtml(currentPreviewSource)}</pre>`;
+}
+function switchTab(tab) {
+  currentTab=tab;
+  document.getElementById('ptab-preview').classList.toggle('on', tab==='preview');
+  document.getElementById('ptab-code').classList.toggle('on', tab==='code');
+  if (!currentPreviewHtml) return;
+  if (tab==='preview') renderIframe(); else renderSource();
+}
+function togglePreview() {
+  previewOpen=!previewOpen;
+  document.getElementById('preview-panel').classList.toggle('closed', !previewOpen);
+  document.getElementById('preview-btn').classList.toggle('on', previewOpen);
+}
+
+/* ── SEND MESSAGE ── */
+async function sendMessage() {
+  const inp = document.getElementById('chat-inp');
+  const text = inp.value.trim();
+  if (!text || isStreaming) return;
+  inp.value=''; autoResize(inp);
+  messages.push({ role:'user', content:text });
+  appendMsgEl('user', text);
+  isStreaming=true; document.getElementById('send-btn').disabled=true;
+  const typingEl = showTyping();
+  try {
+    if (!currentConvoId) {
+      const title = text.slice(0,52)+(text.length>52?'…':'');
+      const { data: convo, error } = await sb.from('conversations').insert({ user_id:currentUser.id, title, updated_at:new Date().toISOString() }).select().single();
+      if (!convo) throw new Error(error?.message||'Could not create conversation');
+      currentConvoId = convo.id;
+      document.getElementById('topbar-title').textContent = title;
+      await loadConversations();
+    }
+    await sb.from('ai_messages').insert({ conversation_id:currentConvoId, role:'user', content:text });
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:4096,
+        system: settings.systemPrompt || DEFAULT_SYSTEM,
+        messages: messages.map(m => ({ role:m.role, content:m.content }))
+      })
+    });
+    if (!response.ok) { const err=await response.json(); throw new Error(err.error?.message||`API error ${response.status}`); }
+    const data = await response.json();
+    const reply = data.content?.map(b=>b.type==='text'?b.text:'').filter(Boolean).join('\n')||'';
+    typingEl.remove();
+    messages.push({ role:'assistant', content:reply });
+    const msgEl = appendMsgEl('assistant', reply);
+    await sb.from('ai_messages').insert({ conversation_id:currentConvoId, role:'assistant', content:reply });
+    await sb.from('conversations').update({ updated_at:new Date().toISOString() }).eq('id', currentConvoId);
+    tryPopulatePreview(reply);
+  } catch(err) {
+    typingEl.remove();
+    const errMsg = `Error: ${err.message}`;
+    messages.push({ role:'assistant', content:errMsg });
+    appendMsgEl('assistant', errMsg);
+  }
+  isStreaming=false; document.getElementById('send-btn').disabled=false;
+  document.getElementById('chat-inp').focus();
+}
+
+function showTyping() {
+  const wrap = document.getElementById('messages');
+  const g = document.createElement('div'); g.className='msg-group assistant';
+  const av = document.createElement('div'); av.className='ai-av';
+  av.innerHTML='<i class="fa-solid fa-fire-flame-curved"></i>';
+  const b = document.createElement('div'); b.className='msg-bubble';
+  b.innerHTML='<div class="typing-dots"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
+  g.appendChild(av); g.appendChild(b); wrap.appendChild(g); wrap.scrollTop=wrap.scrollHeight;
+  return g;
+}
+
+function chipSend(t) { document.getElementById('chat-inp').value=t; sendMessage(); }
+function handleKey(e) { if (e.key==='Enter'&&!e.shiftKey) { e.preventDefault(); sendMessage(); } }
+function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,160)+'px'; }
+
+/* ── SETTINGS ── */
+function openSettings() {
+  document.getElementById('sn-name').value = settings.aiName||DEFAULT_AI_NAME;
+  document.getElementById('sn-prompt').value = settings.systemPrompt||DEFAULT_SYSTEM;
+  document.getElementById('sn-displayname').value = settings.displayName||'';
+  document.getElementById('settings-modal').classList.add('open');
+  document.getElementById('user-menu').classList.remove('open');
+}
+function closeSettings() { document.getElementById('settings-modal').classList.remove('open'); }
+async function saveSettings() {
+  settings.aiName = document.getElementById('sn-name').value.trim()||DEFAULT_AI_NAME;
+  settings.systemPrompt = document.getElementById('sn-prompt').value.trim()||DEFAULT_SYSTEM;
+  settings.displayName = document.getElementById('sn-displayname').value.trim()||settings.displayName;
+  document.getElementById('user-nm').textContent=settings.displayName;
+  document.getElementById('user-av').textContent=(settings.displayName[0]||'?').toUpperCase();
+  applyBrandName();
+  await sb.from('profiles').update({ display_name:settings.displayName, settings:JSON.stringify(settings) }).eq('id', currentUser.id);
+  closeSettings(); showToast('Settings saved.','ok');
+}
+
+/* ── GAME SAVES ── */
+async function loadGameSaves() {
+  const { data } = await sb.from('game_saves').select('*').eq('user_id', currentUser.id).order('updated_at', { ascending: false });
+  gameSaves = data || [];
+  renderSavesShelf();
+}
+
+function renderSavesShelf() {
+  const shelf = document.getElementById('saves-shelf');
+  const list = document.getElementById('saves-list');
+  if (!gameSaves.length) { shelf.className='saves-shelf empty'; list.innerHTML=''; return; }
+  shelf.className='saves-shelf has-saves';
+  list.innerHTML = gameSaves.map(s => `
+    <div class="save-pill ${s.id===currentSaveId?'active-save':''}" title="${escHtml(s.name)} — ${new Date(s.updated_at).toLocaleDateString()}">
+      <span class="save-pill-play"><i class="fa-solid fa-play"></i></span>
+      <span class="save-pill-name" onclick="loadSave('${s.id}')">${escHtml(s.name)}</span>
+      <button class="save-pill-del" onclick="deleteSave(event,'${s.id}')" title="Delete save"><i class="fa-solid fa-xmark"></i></button>
+    </div>`).join('');
+}
+
+async function loadSave(id) {
+  const save = gameSaves.find(s => s.id === id);
+  if (!save) return;
+  currentSaveId = id;
+  currentPreviewHtml = save.html;
+  currentPreviewSource = save.html;
+  // open preview panel if closed
+  if (!previewOpen) { previewOpen=true; document.getElementById('preview-panel').classList.remove('closed'); document.getElementById('preview-btn').classList.add('on'); }
+  // render iframe and inject saved state after load
+  const body = document.getElementById('preview-body'); body.innerHTML='';
+  const iframe = document.createElement('iframe'); iframe.className='preview-iframe';
+  iframe.sandbox='allow-scripts allow-same-origin'; body.appendChild(iframe);
+  iframe.contentDocument.open(); iframe.contentDocument.write(save.html); iframe.contentDocument.close();
+  // inject saved state so the game can restore itself
+  if (save.state) {
+    try {
+      const state = JSON.parse(save.state);
+      iframe.contentWindow.__savedState = state;
+      // fire a custom event the game can listen to
+      iframe.contentDocument.dispatchEvent(new CustomEvent('emberrestore', { detail: state }));
+    } catch(_) {}
+  }
+  renderSavesShelf();
+  showToast(`Loaded "${save.name}"`, 'ok');
+  // switch topbar title
+  currentTab = 'preview';
+  document.getElementById('ptab-preview').classList.add('on');
+  document.getElementById('ptab-code').classList.remove('on');
+}
+
+async function deleteSave(e, id) {
+  e.stopPropagation();
+  await sb.from('game_saves').delete().eq('id', id);
+  if (currentSaveId === id) currentSaveId = null;
+  await loadGameSaves();
+  showToast('Save deleted.', '');
+}
+
+function toggleSaveNameModal() {
+  const modal = document.getElementById('save-name-modal');
+  const isOpen = modal.classList.contains('open');
+  if (isOpen) { closeSaveNameModal(); return; }
+  // pre-fill name: use existing save name if loaded, or infer from convo title
+  const existing = gameSaves.find(s => s.id === currentSaveId);
+  const convo = conversations.find(c => c.id === currentConvoId);
+  const suggested = existing?.name || convo?.title?.replace(/build|create|make|write|code/gi,'').trim().slice(0,30) || 'My Game';
+  document.getElementById('save-name-inp').value = suggested;
+  modal.classList.add('open');
+  setTimeout(() => { document.getElementById('save-name-inp').select(); }, 50);
+}
+function closeSaveNameModal() { document.getElementById('save-name-modal').classList.remove('open'); }
+
+async function confirmSave() {
+  const name = document.getElementById('save-name-inp').value.trim();
+  if (!name || !currentPreviewHtml) { closeSaveNameModal(); return; }
+  closeSaveNameModal();
+  // try to grab current state from the iframe
+  let state = null;
+  try {
+    const iframe = document.querySelector('#preview-body iframe');
+    if (iframe?.contentWindow?.__saveState) state = JSON.stringify(iframe.contentWindow.__saveState());
+    else if (iframe?.contentWindow?.__gameState) state = JSON.stringify(iframe.contentWindow.__gameState);
+  } catch(_) {}
+
+  if (currentSaveId) {
+    // overwrite existing save
+    await sb.from('game_saves').update({ name, html: currentPreviewHtml, state, updated_at: new Date().toISOString() }).eq('id', currentSaveId);
+  } else {
+    // new save
+    const { data } = await sb.from('game_saves').insert({ user_id: currentUser.id, name, html: currentPreviewHtml, state, conversation_id: currentConvoId || null, updated_at: new Date().toISOString() }).select().single();
+    if (data) currentSaveId = data.id;
+  }
+  await loadGameSaves();
+  showToast(`Saved "${name}"`, 'ok');
+}
+
+// auto-save when re-running an already saved game
+async function autoSaveIfActive() {
+  if (!currentSaveId || !currentPreviewHtml) return;
+  const save = gameSaves.find(s => s.id === currentSaveId);
+  if (!save) return;
+  let state = null;
+  try {
+    const iframe = document.querySelector('#preview-body iframe');
+    if (iframe?.contentWindow?.__saveState) state = JSON.stringify(iframe.contentWindow.__saveState());
+    else if (iframe?.contentWindow?.__gameState) state = JSON.stringify(iframe.contentWindow.__gameState);
+  } catch(_) {}
+  await sb.from('game_saves').update({ html: currentPreviewHtml, state, updated_at: new Date().toISOString() }).eq('id', currentSaveId);
+  await loadGameSaves();
+}
+
+// close save name modal on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('#save-game-btn') && !e.target.closest('#save-name-modal')) closeSaveNameModal();
+});
+
+/* ── UTILS ── */
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function showToast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;setTimeout(()=>t.classList.remove('show'),2800)}
+document.querySelectorAll('.modal-bg').forEach(el=>el.addEventListener('mousedown',function(e){if(e.target===this)this.classList.remove('open')}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-bg').forEach(el=>el.classList.remove('open'))});
+
+init();
+</script>
+
+<!--
+=== SUPABASE SETUP ===
+See supabase_setup.sql for the full schema.
+Use the SAME Supabase URL + anon key as your Chat Bubble (index.html).
+Accounts are shared automatically — one login works in both apps.
+
+Key tables used by Ember:
+  profiles        (shared with Chat Bubble)
+  conversations   (Ember AI conversation threads)
+  ai_messages     (Ember AI messages — separate from Chat Bubble's messages table)
+  game_saves      (sandbox game saves)
+-->
 </body>
-
 </html>
-
-
-
-
-
-
